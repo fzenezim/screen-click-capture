@@ -1,0 +1,8 @@
+src/screen_click_capture.egg-info/
+__pycache__/
+*.pyc
+.venv/
+capturas/
+build/
+dist/
+*.egg-info/
