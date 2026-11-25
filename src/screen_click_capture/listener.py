@@ -30,6 +30,7 @@ class ClickCapture:
         out_dir: pasta onde os PNGs serão salvos (01.png, 02.png, ...)
         hotkey: tecla de toggle (default "f9")
         on_state_change: callback opcional (is_recording: bool)
+        on_capture: callback opcional (n: int, path: Path) a cada PNG salvo
     """
 
     def __init__(
@@ -38,10 +39,12 @@ class ClickCapture:
         out_dir: Path | str = Path("capturas"),
         hotkey: Optional[str] = "f9",
         on_state_change: Optional[Callable[[bool], None]] = None,
+        on_capture: Optional[Callable[[int, Path], None]] = None,
     ):
         self._out_dir = Path(out_dir)
         self._hotkey = (hotkey or "f9").lower()
         self._on_state_change = on_state_change
+        self._on_capture = on_capture
         self.is_recording = False
         self._counter = 0
 
@@ -58,6 +61,14 @@ class ClickCapture:
             return
         try:
             self._on_state_change(self.is_recording)
+        except Exception:
+            pass
+
+    def _notify_capture(self, n: int, path: Path) -> None:
+        if self._on_capture is None:
+            return
+        try:
+            self._on_capture(n, path)
         except Exception:
             pass
 
@@ -85,6 +96,7 @@ class ClickCapture:
             from screen_click_capture.capture import capture_screen
             capture_screen(x, y, out_path=out_path)
             print(f"  [{nn}] {out_path}", flush=True)
+            self._notify_capture(self._counter, out_path)
         except Exception as e:
             print(f"  [{nn}] ERRO na captura: {e!r}", flush=True)
 
@@ -112,6 +124,7 @@ class Recorder:
         out_dir: Path | str = Path("capturas"),
         hotkey: Optional[str] = "f9",
         on_state_change: Optional[Callable[[bool], None]] = None,
+        on_capture: Optional[Callable[[int, Path], None]] = None,
     ):
         from pynput import keyboard, mouse  # noqa: F401 — checa disponibilidade
 
@@ -119,6 +132,7 @@ class Recorder:
             out_dir=out_dir,
             hotkey=hotkey,
             on_state_change=on_state_change,
+            on_capture=on_capture,
         )
         self._toggle_event: threading.Event = threading.Event()
         self._ready: threading.Event = threading.Event()
